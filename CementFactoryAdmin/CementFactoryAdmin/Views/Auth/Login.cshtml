@@ -1,0 +1,25 @@
+﻿@model LoginRequest
+
+@{
+    ViewData["Title"] = "Логин";
+    Layout = "_Layout";
+}
+<div class="w-100 d-flex justify-content-center mt-5 pt-5">
+    <div class="login-form">
+        <h4 class="text-center mb-4">Авторизация</h4>
+        <form method="post" asp-action="Login">
+            <div class="mb-3">
+                <label for="username" class="form-label">Логин</label>
+                <input type="text" class="form-control" id="username" name="Username" value="@Model.Username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="password" name="Password" required>
+            </div>
+            <div class="text-danger">
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,432 @@
+﻿@page
+
+@{
+    Layout = "_Layout";
+}
+
+<div class="container mt-5 mb-5">
+    <div id="loader"></div>
+    <div id="overlay"></div>
+    <div id="alert" class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+    </div>
+    <main role="main" class="pb-3">
+        <h4 class="col-12 text-center">
+            Фильтры для генерации отчетов
+        </h4>
+
+        <div class="mb-5 d-flex justify-content-center">
+            <div class="row" style="width: 600px;">
+                <div class="col-12 col-md-6">
+                    <b style="font-size: 18px">от:</b>
+                    <input id="from" class="form-control custom-input-gns" type="date"/>
+                </div>
+                <div class="col-12 col-md-6">
+                    <b style="font-size: 18px;">до:</b>
+                    <input id="to" class="form-control custom-input-gns" type="date"/>
+                </div>
+                <div class="col-12 col-md-6">
+                    <b style="font-size: 18px;">Статус машины:</b>
+                    <select id="truckStatus" class="form-control custom-input-gns">
+                        <option value="">Все</option>
+                        <option value="Пустой">Пустой</option>
+                        <option value="Загружен">Загружен</option>
+                        <option value="Приход">Приход</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <b style="font-size: 18px;">Тип груза:</b>
+                    <input id="typeCargo" class="form-control custom-input-gns" type="text" placeholder="Введите тип груза"/>
+                </div>
+                <div class="col-12 mt-3">
+                    <input type="checkbox" id="viewChart" class="form-check-input me-2">
+                    <label for="viewChart" class="form-check-label">Отобразить в виде графиков</label>
+                </div>
+                <div>
+                    <button style="box-shadow: none; background-color: #0F9197; border-radius: 0; border-color: unset;" id="generate" class="btn btn-primary mt-4">Сгенерировать отчет</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="table-container">
+            <!-- The truck table will be generated here -->
+        </div>
+        <div id="chart-container" class="mt-5">
+            <div class="row">
+                <div class="col-5 pt-5">
+                    <canvas id="doughnutChart" style="display: none;"></canvas>
+                </div>
+                <div class="col-7">
+                    <canvas id="barChart" style="margin-top: 50px;display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div id="pagination" class="text-center mt-4">
+            <!-- Pagination buttons will be generated here -->
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalLabel">Изображение</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img id="modalImage" src="" alt="Truck Image" class="img-fluid" style="width: 100%; height: auto; max-width: 400px;">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ОК</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/jquery.dataTables.min.js"></script>
+<script src="~/lib/sweetalert2.all.min.js"></script>
+<script src="~/lib/chart.js"></script>
+<script>
+    let currentPage = 1; // Initialize current page
+    let doughnutChartInstance = null;
+    let barChartInstance = null;
+    let intervalId = null;
+
+    $(document).ready(function () {
+        $(document).on('click', '.image-link', function (event) {
+            event.preventDefault();
+            const imagePath = $(this).attr('data-image');
+            $('#modalImage').attr('src', imagePath);
+            const modal = new bootstrap.Modal($('#imageModal'));
+            modal.show();
+        });
+    
+        // Generate truck report when clicking "Generate" button
+        $("#generate").on("click", function () {
+            let fromDate = $("#from").val();
+            let toDate = $("#to").val();
+            const truckStatus = $("#truckStatus").val();
+            const typeCargo = $("#typeCargo").val();
+            const viewChart = $("#viewChart").is(":checked");
+
+            if (fromDate && toDate) {
+                // Convert the dates to Date objects
+                const from = new Date(fromDate);
+                const to = new Date(toDate);
+
+                // Check if the period exceeds 3 months
+                const threeMonthsLater = new Date(from);
+                threeMonthsLater.setMonth(from.getMonth() + 3); // Add 3 months
+
+                if (to > threeMonthsLater) {
+                    Swal.fire({
+                        icon: 'warning',
+                        text: 'Дата от и до не может превышать промежуток в 3 Месяца!',
+                        confirmButtonText: 'ОК'
+                    });
+                } else {
+                    fetchTruckData(fromDate, toDate, currentPage, truckStatus, typeCargo, viewChart);
+                }
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    text: 'Пожалуйста выберите дату от и до!',
+                    confirmButtonText: 'ОК'
+                });
+            }
+        });
+    });
+
+    function fetchTruckData(from, to, page, truckStatus, typeCargo, viewChart) {
+        showLoader();
+
+        $.ajax({
+            url: '@Url.Action("GetTrucks", "Home")', // Adjust this to your API endpoint
+            type: 'GET',
+            data: {
+                from: from,
+                to: to,
+                truckStatus: truckStatus,
+                typeCargo: typeCargo,
+                isChart: viewChart,
+                page: page
+            },
+            success: function (response) {
+                let viewChart = $("#viewChart").is(":checked");
+                if (response.trucks) {
+                    if (viewChart) {
+                        if (intervalId) {
+                            clearInterval(intervalId);
+                        }
+                        intervalId = setInterval(() => {
+                            $("#generate").trigger("click");
+                        }, 300000);                     
+                        generateDoughnutChart(response.trucks);
+                        generateBarChart(response.trucks);
+                    } else {
+                        if (intervalId) {
+                            clearInterval(intervalId);
+                        }
+                        generateTruckTable(response.trucks);
+                        generatePagination(response.totalTrucks, response.pageSize, page);
+                    }
+                }
+            },
+            error: function (xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    text: 'Что-то пошло не так, ошибка сервера!',
+                    confirmButtonText: 'ОК'
+                });
+            },
+            complete: function () {
+                hideLoader();
+            }
+        });
+    }
+
+    function generateTruckTable(data) {
+        $("#table-container").show();
+        $("#chart-container").hide();
+
+        let table = $("<table>").addClass("table table-striped table-bordered");
+        let thead = $("<thead>").appendTo(table);
+        let tbody = $("<tbody>").appendTo(table);
+
+        // Table headers
+        let headerRow = $("<tr>").appendTo(thead);
+        $("<th>").text("Номер машины").appendTo(headerRow);
+        $("<th>").text("Тип груза").appendTo(headerRow);
+        $("<th>").text("Пустой вес").appendTo(headerRow);
+        $("<th>").text("Разница веса").appendTo(headerRow);
+        $("<th>").text("Полный вес").appendTo(headerRow);
+        $("<th>").text("Куб.м").appendTo(headerRow);
+        $("<th>").text("Статус").appendTo(headerRow);
+        $("<th>").text("Дата").appendTo(headerRow);
+        $("<th>").text("1С Статус").appendTo(headerRow);
+        $("<th>").text("Изображение").appendTo(headerRow);
+
+        // Table rows (truck data)
+        $.each(data, function (index, truck) {
+            let dataRow = $("<tr>").appendTo(tbody);
+            $("<td>").text(truck.plate_number).appendTo(dataRow);
+            $("<td>").text(truck.type_cargo).appendTo(dataRow);
+            $("<td>").text(truck.weight_empty.toFixed(2)).appendTo(dataRow);
+            $("<td>").text(truck.weight_difference.toFixed(2)).appendTo(dataRow);
+            $("<td>").text(truck.weight_full.toFixed(2)).appendTo(dataRow);
+            $("<td>").text(truck.cub_metr).appendTo(dataRow);
+            $("<td>").text(truck.truck_status).appendTo(dataRow);
+            $("<td>").text(new Date(truck.date).toLocaleString()).appendTo(dataRow);
+            $("<td>").text(truck.c1_status).appendTo(dataRow);
+            // Add the image link with data-image attribute
+            if (truck.image_path){
+                let imageLink = $("<a>")
+                    .attr("href", "#")
+                    .addClass("image-link")
+                    .attr("data-image", truck.image_path) // Add image path as a data attribute
+                    .text("Просмотреть изображение"); // Link text
+
+                $("<td>").append(imageLink).appendTo(dataRow);
+            }else{
+                $("<td>").text("Изображение отсутствует").appendTo(dataRow);
+            }           
+        });
+
+        $("#table-container").empty().append(table);
+    }
+
+    // Store consistent colors for each cargo type
+    const cargoColors = {};
+
+    // Helper function to generate or reuse a color for a cargo type
+    function getCargoColor(type) {
+        if (!cargoColors[type]) {
+            cargoColors[type] = getRandomColor(); // Generate a new color if not already assigned
+        }
+        return cargoColors[type];
+    }
+
+    // Helper function to generate a random color
+    function getRandomColor() {
+        let letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // Generate Doughnut Chart (Exclude Empty Cargo Types)
+    function generateDoughnutChart(data) {
+        if (doughnutChartInstance) {
+            doughnutChartInstance.destroy();
+        }
+
+        let cargoTypeCount = {};
+
+        // Count the number of each non-empty cargo type
+        data.forEach(truck => {
+            if (truck.type_cargo) { // Exclude empty cargo types
+                cargoTypeCount[truck.type_cargo] = (cargoTypeCount[truck.type_cargo] || 0) + 1;
+            }
+        });
+
+        let cargoTypes = Object.keys(cargoTypeCount);
+        let counts = Object.values(cargoTypeCount);
+
+        $("#table-container").hide();
+        $("#pagination").hide();
+        $("#chart-container").show();
+        $("#doughnutChart").show();
+        $("#barChart").show();
+
+        let doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+        doughnutChartInstance = new Chart(doughnutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: cargoTypes,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: cargoTypes.map(type => getCargoColor(type))
+                }]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Распределение типов груза'
+                }
+            }
+        });
+    }
+
+    // Generate Bar Chart (Exclude Empty Cargo Types)
+    function generateBarChart(data) {
+        if (barChartInstance) {
+            barChartInstance.destroy();
+        }
+
+        let cargoByDate = {};
+
+        // Group the trucks by date and non-empty cargo type
+        data.forEach(truck => {
+            if (truck.type_cargo) { // Exclude empty cargo types
+                let date = new Date(truck.date).toLocaleDateString();
+                let cargoType = truck.type_cargo;
+
+                if (!cargoByDate[date]) {
+                    cargoByDate[date] = {};
+                }
+
+                cargoByDate[date][cargoType] = (cargoByDate[date][cargoType] || 0) + 1;
+            }
+        });
+
+        let dates = Object.keys(cargoByDate);
+        let cargoTypes = Array.from(
+            new Set(data.map(truck => truck.type_cargo).filter(type => type))
+        );
+
+        let datasets = cargoTypes.map(type => {
+            let dataPoints = dates.map(date => cargoByDate[date][type] || 0);
+            return {
+                label: type,
+                data: dataPoints,
+                backgroundColor: getCargoColor(type)
+            };
+        });
+
+        $("#doughnutChart").show();
+        $("#barChart").show();
+
+        let barCtx = document.getElementById('barChart').getContext('2d');
+        barChartInstance = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Дата' } },
+                    y: { title: { display: true, text: 'Количество' } }
+                }
+            }
+        });
+    }
+
+    function generatePagination(totalTrucks, pageSize, currentPage) {
+        let totalPages = Math.ceil(totalTrucks / pageSize);
+        let pagination = $("#pagination").empty();
+
+        // Previous Button
+        if (currentPage > 1) {
+            $("<button>")
+                .text("Назад")
+                .addClass("btn btn-secondary")
+                .on("click", function () {
+                    const fromDate = $("#from").val();
+                    const toDate = $("#to").val();
+                    const truckStatus = $("#truckStatus").val();
+                    const typeCargo = $("#typeCargo").val();
+                    const viewChart = $("#viewChart").is(":checked");
+                
+                    currentPage--;
+                    fetchTruckData(fromDate, toDate, currentPage, truckStatus, typeCargo, viewChart);
+                })
+                .appendTo(pagination);
+        }
+
+        // Page Numbers
+        for (let i = 1; i <= totalPages; i++) {
+            $("<button>")
+                .text(i)
+                .addClass("btn btn-light mx-1" + (i === currentPage ? " active" : ""))
+                .on("click", (function (page) {
+                    return function () {
+                        const fromDate = $("#from").val();
+                        const toDate = $("#to").val();
+                        const truckStatus = $("#truckStatus").val();
+                        const typeCargo = $("#typeCargo").val();
+                        const viewChart = $("#viewChart").is(":checked");
+                        
+                        currentPage = page;
+                        fetchTruckData(fromDate, toDate, currentPage, truckStatus, typeCargo, viewChart);
+                    };
+                })(i))
+                .appendTo(pagination);
+        }
+
+        // Next Button
+        if (currentPage < totalPages) {
+            $("<button>")
+                .text("Вперед")
+                .addClass("btn btn-secondary")
+                .on("click", function () {
+                    const fromDate = $("#from").val();
+                    const toDate = $("#to").val();
+                    const truckStatus = $("#truckStatus").val();
+                    const typeCargo = $("#typeCargo").val();
+                    const viewChart = $("#viewChart").is(":checked");
+                    
+                    currentPage++;
+                    fetchTruckData(fromDate, toDate, currentPage, truckStatus, typeCargo, viewChart);
+                })
+                .appendTo(pagination);
+        }
+    }
+
+    function showLoader() {
+        $("#loader").show();
+        $("#overlay").show();
+    }
+
+    function hideLoader() {
+        $("#loader").hide();
+        $("#overlay").hide();
+    }
+
+</script>

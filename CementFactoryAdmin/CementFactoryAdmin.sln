@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CementFactoryAdmin", "CementFactoryAdmin\CementFactoryAdmin.csproj", "{FB1693A4-1E4F-4F9A-AA9F-CDC1556D9CEE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB1693A4-1E4F-4F9A-AA9F-CDC1556D9CEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB1693A4-1E4F-4F9A-AA9F-CDC1556D9CEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB1693A4-1E4F-4F9A-AA9F-CDC1556D9CEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB1693A4-1E4F-4F9A-AA9F-CDC1556D9CEE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
