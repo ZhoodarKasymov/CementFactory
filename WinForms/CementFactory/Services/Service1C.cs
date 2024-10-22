@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -61,7 +62,7 @@ namespace CementFactory.Services
                 response.EnsureSuccessStatusCode();
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var agents = JsonConvert.DeserializeObject<ApiResponse>(responseBody);
-                return agents.Results;
+                return agents.Results.OrderBy(i => i.Name).ToList();
             }
         }
 
@@ -102,7 +103,7 @@ namespace CementFactory.Services
                 response.EnsureSuccessStatusCode();
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var products = JsonConvert.DeserializeObject<ApiResponse>(responseBody);
-                return products.Results;
+                return products.Results.OrderBy(i => i.Name).ToList();
             }
         }
 

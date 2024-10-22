@@ -58,12 +58,14 @@
             this.label12 = new System.Windows.Forms.Label();
             this.label14 = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
-            this.currrentStatusBox = new System.Windows.Forms.ComboBox();
             this.saveRecognizedPlateButton = new System.Windows.Forms.Button();
             this.cancelRecognizedPlate = new System.Windows.Forms.Button();
             this.cubMetrBox = new System.Windows.Forms.TextBox();
             this.label9 = new System.Windows.Forms.Label();
-            this.wichCameraIsPressedBox = new System.Windows.Forms.TextBox();
+            this.enterCheckBox = new System.Windows.Forms.CheckBox();
+            this.enterTextBoxCargo = new System.Windows.Forms.TextBox();
+            this.quantityBox = new System.Windows.Forms.TextBox();
+            this.label11 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.videoView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.videoView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.videoView3)).BeginInit();
@@ -136,7 +138,7 @@
             // 
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(284, 396);
+            this.label2.Location = new System.Drawing.Point(148, 396);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(113, 15);
             this.label2.TabIndex = 5;
@@ -144,9 +146,8 @@
             // 
             // currentPlateNumber
             // 
-            this.currentPlateNumber.Location = new System.Drawing.Point(284, 414);
+            this.currentPlateNumber.Location = new System.Drawing.Point(148, 414);
             this.currentPlateNumber.Name = "currentPlateNumber";
-            this.currentPlateNumber.ReadOnly = true;
             this.currentPlateNumber.Size = new System.Drawing.Size(130, 20);
             this.currentPlateNumber.TabIndex = 6;
             this.currentPlateNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -155,11 +156,11 @@
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label3.Location = new System.Drawing.Point(148, 396);
+            this.label3.Location = new System.Drawing.Point(284, 396);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(115, 15);
+            this.label3.Size = new System.Drawing.Size(74, 15);
             this.label3.TabIndex = 7;
-            this.label3.Text = "Статус машины:";
+            this.label3.Text = "Тип груза:";
             // 
             // showHistoryButton
             // 
@@ -178,7 +179,7 @@
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label4.Location = new System.Drawing.Point(6, 474);
+            this.label4.Location = new System.Drawing.Point(4, 466);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(74, 15);
             this.label4.TabIndex = 11;
@@ -188,7 +189,7 @@
             // 
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label5.Location = new System.Drawing.Point(213, 473);
+            this.label5.Location = new System.Drawing.Point(211, 465);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(90, 15);
             this.label5.TabIndex = 13;
@@ -241,7 +242,7 @@
             this.RecognizeCamFirst.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.RecognizeCamFirst.Location = new System.Drawing.Point(455, 361);
             this.RecognizeCamFirst.Name = "RecognizeCamFirst";
-            this.RecognizeCamFirst.Size = new System.Drawing.Size(166, 23);
+            this.RecognizeCamFirst.Size = new System.Drawing.Size(195, 23);
             this.RecognizeCamFirst.TabIndex = 22;
             this.RecognizeCamFirst.Text = "Распознать пустую машину\r\n\r\n";
             this.RecognizeCamFirst.UseVisualStyleBackColor = true;
@@ -268,7 +269,7 @@
             this.saveAndPrintButton.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.saveAndPrintButton.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.saveAndPrintButton.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.saveAndPrintButton.Location = new System.Drawing.Point(12, 560);
+            this.saveAndPrintButton.Location = new System.Drawing.Point(10, 552);
             this.saveAndPrintButton.Name = "saveAndPrintButton";
             this.saveAndPrintButton.Size = new System.Drawing.Size(239, 23);
             this.saveAndPrintButton.TabIndex = 24;
@@ -279,7 +280,7 @@
             // typeCargoBox
             // 
             this.typeCargoBox.FormattingEnabled = true;
-            this.typeCargoBox.Location = new System.Drawing.Point(11, 492);
+            this.typeCargoBox.Location = new System.Drawing.Point(9, 484);
             this.typeCargoBox.Name = "typeCargoBox";
             this.typeCargoBox.Size = new System.Drawing.Size(198, 21);
             this.typeCargoBox.TabIndex = 25;
@@ -287,7 +288,7 @@
             // clientsBox
             // 
             this.clientsBox.FormattingEnabled = true;
-            this.clientsBox.Location = new System.Drawing.Point(216, 491);
+            this.clientsBox.Location = new System.Drawing.Point(214, 483);
             this.clientsBox.Name = "clientsBox";
             this.clientsBox.Size = new System.Drawing.Size(198, 21);
             this.clientsBox.TabIndex = 26;
@@ -324,7 +325,7 @@
             // 
             // fullNameContragentBox
             // 
-            this.fullNameContragentBox.Location = new System.Drawing.Point(12, 534);
+            this.fullNameContragentBox.Location = new System.Drawing.Point(10, 526);
             this.fullNameContragentBox.Name = "fullNameContragentBox";
             this.fullNameContragentBox.Size = new System.Drawing.Size(197, 20);
             this.fullNameContragentBox.TabIndex = 55;
@@ -334,7 +335,7 @@
             // 
             this.label13.AutoSize = true;
             this.label13.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label13.Location = new System.Drawing.Point(10, 516);
+            this.label13.Location = new System.Drawing.Point(8, 508);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(111, 15);
             this.label13.TabIndex = 54;
@@ -370,14 +371,6 @@
             this.label15.TabIndex = 60;
             this.label15.Text = "0";
             // 
-            // currrentStatusBox
-            // 
-            this.currrentStatusBox.FormattingEnabled = true;
-            this.currrentStatusBox.Location = new System.Drawing.Point(148, 414);
-            this.currrentStatusBox.Name = "currrentStatusBox";
-            this.currrentStatusBox.Size = new System.Drawing.Size(130, 21);
-            this.currrentStatusBox.TabIndex = 61;
-            // 
             // saveRecognizedPlateButton
             // 
             this.saveRecognizedPlateButton.BackColor = System.Drawing.Color.DodgerBlue;
@@ -385,7 +378,7 @@
             this.saveRecognizedPlateButton.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.saveRecognizedPlateButton.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.saveRecognizedPlateButton.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.saveRecognizedPlateButton.Location = new System.Drawing.Point(228, 441);
+            this.saveRecognizedPlateButton.Location = new System.Drawing.Point(11, 441);
             this.saveRecognizedPlateButton.Name = "saveRecognizedPlateButton";
             this.saveRecognizedPlateButton.Size = new System.Drawing.Size(90, 22);
             this.saveRecognizedPlateButton.TabIndex = 62;
@@ -400,7 +393,7 @@
             this.cancelRecognizedPlate.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.cancelRecognizedPlate.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cancelRecognizedPlate.ForeColor = System.Drawing.Color.Black;
-            this.cancelRecognizedPlate.Location = new System.Drawing.Point(324, 441);
+            this.cancelRecognizedPlate.Location = new System.Drawing.Point(104, 441);
             this.cancelRecognizedPlate.Name = "cancelRecognizedPlate";
             this.cancelRecognizedPlate.Size = new System.Drawing.Size(90, 22);
             this.cancelRecognizedPlate.TabIndex = 63;
@@ -410,9 +403,9 @@
             // 
             // cubMetrBox
             // 
-            this.cubMetrBox.Location = new System.Drawing.Point(215, 534);
+            this.cubMetrBox.Location = new System.Drawing.Point(213, 526);
             this.cubMetrBox.Name = "cubMetrBox";
-            this.cubMetrBox.Size = new System.Drawing.Size(197, 20);
+            this.cubMetrBox.Size = new System.Drawing.Size(103, 20);
             this.cubMetrBox.TabIndex = 65;
             this.cubMetrBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.cubMetrBox.Visible = false;
@@ -421,22 +414,51 @@
             // 
             this.label9.AutoSize = true;
             this.label9.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label9.Location = new System.Drawing.Point(213, 516);
+            this.label9.Location = new System.Drawing.Point(210, 508);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(48, 15);
             this.label9.TabIndex = 64;
             this.label9.Text = "Куб.м:";
             // 
-            // wichCameraIsPressedBox
+            // enterCheckBox
             // 
-            this.wichCameraIsPressedBox.Enabled = false;
-            this.wichCameraIsPressedBox.Location = new System.Drawing.Point(893, 555);
-            this.wichCameraIsPressedBox.Name = "wichCameraIsPressedBox";
-            this.wichCameraIsPressedBox.ReadOnly = true;
-            this.wichCameraIsPressedBox.Size = new System.Drawing.Size(130, 20);
-            this.wichCameraIsPressedBox.TabIndex = 66;
-            this.wichCameraIsPressedBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.wichCameraIsPressedBox.Visible = false;
+            this.enterCheckBox.AutoSize = true;
+            this.enterCheckBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.enterCheckBox.Location = new System.Drawing.Point(954, 8);
+            this.enterCheckBox.Name = "enterCheckBox";
+            this.enterCheckBox.Size = new System.Drawing.Size(69, 17);
+            this.enterCheckBox.TabIndex = 67;
+            this.enterCheckBox.Text = "Приход";
+            this.enterCheckBox.UseVisualStyleBackColor = true;
+            this.enterCheckBox.Click += new System.EventHandler(this.enterCheckBox_CheckedChanged);
+            // 
+            // enterTextBoxCargo
+            // 
+            this.enterTextBoxCargo.Location = new System.Drawing.Point(284, 414);
+            this.enterTextBoxCargo.Name = "enterTextBoxCargo";
+            this.enterTextBoxCargo.Size = new System.Drawing.Size(162, 20);
+            this.enterTextBoxCargo.TabIndex = 68;
+            this.enterTextBoxCargo.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.enterTextBoxCargo.Visible = false;
+            // 
+            // quantityBox
+            // 
+            this.quantityBox.Location = new System.Drawing.Point(322, 526);
+            this.quantityBox.Name = "quantityBox";
+            this.quantityBox.Size = new System.Drawing.Size(90, 20);
+            this.quantityBox.TabIndex = 70;
+            this.quantityBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.quantityBox.Visible = false;
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label11.Location = new System.Drawing.Point(322, 507);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(53, 15);
+            this.label11.TabIndex = 69;
+            this.label11.Text = "Выход:";
             // 
             // MainForm
             // 
@@ -444,12 +466,14 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1035, 587);
-            this.Controls.Add(this.wichCameraIsPressedBox);
+            this.Controls.Add(this.quantityBox);
+            this.Controls.Add(this.label11);
+            this.Controls.Add(this.enterTextBoxCargo);
+            this.Controls.Add(this.enterCheckBox);
             this.Controls.Add(this.cubMetrBox);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.cancelRecognizedPlate);
             this.Controls.Add(this.saveRecognizedPlateButton);
-            this.Controls.Add(this.currrentStatusBox);
             this.Controls.Add(this.label15);
             this.Controls.Add(this.label14);
             this.Controls.Add(this.label12);
@@ -492,12 +516,16 @@
             this.PerformLayout();
         }
 
-        private System.Windows.Forms.TextBox wichCameraIsPressedBox;
+        private System.Windows.Forms.TextBox quantityBox;
+        private System.Windows.Forms.Label label11;
+
+        private System.Windows.Forms.TextBox enterTextBoxCargo;
+
+        private System.Windows.Forms.CheckBox enterCheckBox;
 
         private System.Windows.Forms.TextBox cubMetrBox;
         private System.Windows.Forms.Label label9;
 
-        private System.Windows.Forms.ComboBox currrentStatusBox;
         private System.Windows.Forms.Button saveRecognizedPlateButton;
         private System.Windows.Forms.Button cancelRecognizedPlate;
 

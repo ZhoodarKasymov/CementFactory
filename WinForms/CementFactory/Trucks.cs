@@ -25,6 +25,7 @@ namespace CementFactory
             dataGridView1.Columns["truck_status"].HeaderText = "Статус машины";
             dataGridView1.Columns["weight_empty"].HeaderText = "Вес пустой машины";
             dataGridView1.Columns["weight_difference"].HeaderText = "Разница веса";
+            dataGridView1.Columns["cub_metr"].HeaderText = "Куб.м";
             dataGridView1.Columns["weight_full"].HeaderText = "Вес полной машины";
             dataGridView1.Columns["Date"].HeaderText = "Дата";
             dataGridView1.Columns["c1_status"].HeaderText = "Статус 1C";

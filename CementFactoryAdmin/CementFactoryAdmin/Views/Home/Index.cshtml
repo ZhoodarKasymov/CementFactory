@@ -41,6 +41,14 @@
                     <input type="checkbox" id="viewChart" class="form-check-input me-2">
                     <label for="viewChart" class="form-check-label">Отобразить в виде графиков</label>
                 </div>
+                <div class="col-12 col-md-6 mt-3" style="display: none;" id="viewByCubMetrWrapper">
+                    <input type="checkbox" id="viewByCubMetr" class="form-check-input me-2">
+                    <label for="viewByCubMetr" class="form-check-label">Отобразить в Куб.м</label>
+                </div>
+                <div class="col-12 col-md-6 mt-3" style="display: none;" id="viewByFullWeightWrapper">
+                    <input type="checkbox" id="viewByFullWeight" class="form-check-input me-2" checked="checked">
+                    <label for="viewByFullWeight" class="form-check-label">Отобразить в КГ</label>
+                </div>
                 <div>
                     <button style="box-shadow: none; background-color: #0F9197; border-radius: 0; border-color: unset;" id="generate" class="btn btn-primary mt-4">Сгенерировать отчет</button>
                 </div>
@@ -51,12 +59,22 @@
             <!-- The truck table will be generated here -->
         </div>
         <div id="chart-container" class="mt-5">
+            <h1 class="header_charts" style="text-align: center;display: none;">График по кол-ву машин</h1>
             <div class="row">
                 <div class="col-5 pt-5">
                     <canvas id="doughnutChart" style="display: none;"></canvas>
                 </div>
                 <div class="col-7">
                     <canvas id="barChart" style="margin-top: 50px;display: none;"></canvas>
+                </div>
+            </div>
+            <h1 class="header_charts" style="text-align: center;display: none;">График по сумме куб.м либо кг</h1>
+            <div class="row">
+                <div class="col-5 pt-5">
+                    <canvas id="doughnutChartSecond" style="display: none;"></canvas>
+                </div>
+                <div class="col-7">
+                    <canvas id="barChartSecond" style="margin-top: 50px;display: none;"></canvas>
                 </div>
             </div>
         </div>
@@ -93,8 +111,35 @@
     let doughnutChartInstance = null;
     let barChartInstance = null;
     let intervalId = null;
+    let doughnutChartInstanceSecond = null;
+    let barChartInstanceSecond = null;
 
     $(document).ready(function () {
+        $("#viewByCubMetr").on("change", function() {
+            if (this.checked) {
+                $("#viewByFullWeight").prop("checked", false);
+            }
+        });
+
+        $("#viewByFullWeight").on("change", function() {
+            if (this.checked) {
+                $("#viewByCubMetr").prop("checked", false);
+            }
+        });
+        
+        $("#viewChart").on("change", function() {
+            if (this.checked) {
+                $("#viewByCubMetrWrapper").show();
+                $("#viewByFullWeightWrapper").show();
+                $(".header_charts").show();
+            }else{
+                $("#viewByCubMetrWrapper").hide();
+                $("#viewByFullWeightWrapper").hide();
+                $(".header_charts").hide();
+            }
+        });
+
+
         $(document).on('click', '.image-link', function (event) {
             event.preventDefault();
             const imagePath = $(this).attr('data-image');
@@ -162,9 +207,12 @@
                         }
                         intervalId = setInterval(() => {
                             $("#generate").trigger("click");
-                        }, 300000);                     
+                        }, 300000);
+                        const filterBy = $("#viewByCubMetr").is(":checked") ? 'cub_metr' : 'weight_full';          
                         generateDoughnutChart(response.trucks);
-                        generateBarChart(response.trucks);
+                        generateBarChart(response.trucks);                        
+                        generateDoughnutChartSecond(response.trucks, filterBy);
+                        generateBarChartSecond(response.trucks, filterBy);
                     } else {
                         if (intervalId) {
                             clearInterval(intervalId);
@@ -256,6 +304,110 @@
             color += letters[Math.floor(Math.random() * 16)];
         }
         return color;
+    }
+
+    function generateBarChartSecond(data, filterBy) {
+        if (barChartInstanceSecond) {
+            barChartInstanceSecond.destroy();
+        }
+
+        let cargoSumByDate = {};
+
+        // Group trucks by date and sum of non-empty cargo type based on the filter
+        data.forEach(truck => {
+            if (truck.type_cargo) { // Exclude empty cargo types
+                let date = new Date(truck.date).toLocaleDateString();
+                let cargoType = truck.type_cargo;
+                let valueToSum = filterBy === 'cub_metr' ? parseFloat(truck.cub_metr) : truck.weight_full;
+
+                if (!isNaN(valueToSum)) {
+                    if (!cargoSumByDate[date]) {
+                        cargoSumByDate[date] = {};
+                    }
+
+                    cargoSumByDate[date][cargoType] = (cargoSumByDate[date][cargoType] || 0) + valueToSum;
+                }
+            }
+        });
+
+        let dates = Object.keys(cargoSumByDate);
+        const filteredTrucks = data.filter((truck) => {
+            let valueToSum = filterBy === 'cub_metr' ? parseFloat(truck.cub_metr) : truck.weight_full;
+            return !isNaN(valueToSum);        
+        });
+        
+        let cargoTypes = Array.from(
+            new Set(filteredTrucks.map(truck => truck.type_cargo).filter(type => type))
+        );
+
+        let datasets = cargoTypes.map(type => {
+            let dataPoints = dates.map(date => cargoSumByDate[date][type] || 0);
+            return {
+                label: type,
+                data: dataPoints,
+                backgroundColor: getCargoColor(type)
+            };
+        });
+
+        let barCtxSecond = document.getElementById('barChartSecond').getContext('2d');
+        barChartInstanceSecond = new Chart(barCtxSecond, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Дата' } },
+                    y: { title: { display: true, text: 'Сумма ' + (filterBy === 'cub_metr' ? 'в куб.м' : 'в кг') } }
+                }
+            }
+        });
+
+        $("#barChartSecond").show();
+    }
+
+    function generateDoughnutChartSecond(data, filterBy) {
+        if (doughnutChartInstanceSecond) {
+            doughnutChartInstanceSecond.destroy();
+        }
+
+        let cargoTypeSum = {};
+
+        // Sum of each non-empty cargo type based on the filter
+        data.forEach(truck => {
+            if (truck.type_cargo) { // Exclude empty cargo types
+                let valueToSum = filterBy === 'cub_metr' ? parseFloat(truck.cub_metr) : truck.weight_full;
+                if (!isNaN(valueToSum)) {
+                    cargoTypeSum[truck.type_cargo] = (cargoTypeSum[truck.type_cargo] || 0) + valueToSum;
+                }
+            }
+        });
+
+        let cargoTypes = Object.keys(cargoTypeSum);
+        let sums = Object.values(cargoTypeSum);
+        
+        let doughnutCtxSecond = document.getElementById('doughnutChartSecond').getContext('2d');
+        doughnutChartInstanceSecond = new Chart(doughnutCtxSecond, {
+            type: 'doughnut',
+            data: {
+                labels: cargoTypes,
+                datasets: [{
+                    data: sums,
+                    backgroundColor: cargoTypes.map(type => getCargoColor(type))
+                }]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Распределение по сумме ' + (filterBy === 'cub_metr' ? 'куб.м' : 'кг')
+                }
+            }
+        });
+
+        $("#doughnutChartSecond").show();
     }
 
     // Generate Doughnut Chart (Exclude Empty Cargo Types)

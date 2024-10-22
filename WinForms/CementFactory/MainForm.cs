@@ -26,10 +26,21 @@ namespace CementFactory
         private readonly BarrierService _barrierService;
         private readonly System.Timers.Timer _statusTimer;
 
+        private string CurrentStatus;
+        private string WichCameraPressed;
+
         public MainForm()
         {
             InitializeComponent();
             Core.Initialize();
+            
+            // Hide when init
+            VisibleNotVisibleButtons(false);
+            showRecognizedCumBoxes(false);
+            saveRecognizedPlateButton.Visible = false;
+            cancelRecognizedPlate.Visible = false;
+            typeCargoBox.SelectedIndex = -1;
+            clientsBox.SelectedIndex = -1;
 
             _truckService = new TruckService();
             _printService = new PrintService();
@@ -66,32 +77,6 @@ namespace CementFactory
         {
             var goods = await _service1C.GetProductsAsync();
             var clients = await _service1C.GetAgentsAsync();
-            var statuses = new List<Item>()
-            {
-                new Item
-                {
-                    Name = "--Выберите статус--", 
-                    Guid = ""
-                },
-                new Item
-                {
-                    Name = Constants.Constants.TruckEmptyStatus, 
-                    Guid = Constants.Constants.TruckEmptyStatus
-                },
-                new Item
-                {
-                    Name = Constants.Constants.TruckFullStatus, 
-                    Guid = Constants.Constants.TruckFullStatus
-                },
-                new Item
-                {
-                    Name = Constants.Constants.TruckReceiveStatus, 
-                    Guid = Constants.Constants.TruckReceiveStatus
-                }
-            };
-            
-            goods.Insert(0, new Item { Name = "--Выберите продукт--", Guid = "" });
-            clients.Insert(0, new Item { Name = "--Выберите клиента--", Guid = "" });
             
             typeCargoBox.DataSource = goods;
             typeCargoBox.DisplayMember = "Name";
@@ -100,19 +85,6 @@ namespace CementFactory
             clientsBox.DataSource = clients;
             clientsBox.DisplayMember = "Name";
             clientsBox.ValueMember = "Guid";
-            
-            currrentStatusBox.DataSource = statuses;
-            currrentStatusBox.DisplayMember = "Name";
-            currrentStatusBox.ValueMember = "Guid";
-            
-            typeCargoBox.SelectedIndex = 0;
-            clientsBox.SelectedIndex = 0;
-            
-            // Hide when init
-            VisibleNotVisibleButtons(false);
-            showRecognizedCumBoxes(false);
-            saveRecognizedPlateButton.Visible = false;
-            cancelRecognizedPlate.Visible = false;
             
             var firstCamIp = ConfigurationManager.AppSettings["EnterANPRCam"];
             var secondCamIp = ConfigurationManager.AppSettings["ExitANPRCam"];
@@ -178,12 +150,13 @@ namespace CementFactory
             }
             else
             {
-                MessageBox.Show("Машина распознана, чтобы продолжить выберите статус машины и сохраните!");
+                MessageBox.Show("Машина распознана, чтобы продолжить сохраните данные!");
                 currentWeight.Text = weight.ToString(CultureInfo.InvariantCulture);
                 currentPlateNumber.Text = recognizedPlate.PlateNumber;
-                saveRecognizedPlateButton.Visible = true;
-                cancelRecognizedPlate.Visible = true;
-                wichCameraIsPressedBox.Text = Constants.Constants.TruckEmptyStatus;
+                
+                WichCameraPressed = Constants.Constants.TruckEmptyStatus;
+                CurrentStatus = enterCheckBox.Checked ? Constants.Constants.TruckReceiveStatus : Constants.Constants.TruckEmptyStatus;
+                
                 showRecognizedCumBoxes(true);
             }
             
@@ -202,17 +175,19 @@ namespace CementFactory
             if (!string.IsNullOrEmpty(recognizedPlate.Error))
             {
                 MessageBox.Show("Машина не распознан!");
-                DisableAllButtons(true);
-                return;
+            }
+            else
+            {
+                MessageBox.Show("Машина распознана, чтобы продолжить сохраните данные!");
+                currentWeight.Text = weight.ToString(CultureInfo.InvariantCulture);
+                currentPlateNumber.Text = recognizedPlate.PlateNumber;
+                
+                WichCameraPressed = Constants.Constants.TruckFullStatus;
+                CurrentStatus = enterCheckBox.Checked ? Constants.Constants.TruckReceiveStatus : Constants.Constants.TruckFullStatus;
+                
+                showRecognizedCumBoxes(true);
             }
             
-            MessageBox.Show("Машина распознана, чтобы продолжить выберите статус машины и сохраните!");
-            currentWeight.Text = weight.ToString(CultureInfo.InvariantCulture);
-            currentPlateNumber.Text = recognizedPlate.PlateNumber;
-            saveRecognizedPlateButton.Visible = true;
-            cancelRecognizedPlate.Visible = true;
-            wichCameraIsPressedBox.Text = Constants.Constants.TruckFullStatus;
-            showRecognizedCumBoxes(true);
             DisableAllButtons(true);
         }
 
@@ -243,11 +218,18 @@ namespace CementFactory
                 DisableAllButtons(true);
                 return;
             }
+            if (string.IsNullOrEmpty(quantityBox.Text))
+            {
+                MessageBox.Show("Пропишите кол-во!");
+                DisableAllButtons(true);
+                return;
+            }
 
             var selectedGood = (Item)typeCargoBox.SelectedItem;
             var selectedClient = (Item)clientsBox.SelectedItem;
             var fullNameAgent = fullNameContragentBox.Text;
             var cubMetr = cubMetrBox.Text;
+            var quantity = quantityBox.Text;
             
             var lastFoundPlateNumber = currentPlateNumber.Text;
             
@@ -275,7 +257,7 @@ namespace CementFactory
             truck.cub_metr = cubMetr;
             
             _truckService.UpdateTruck(truck);
-            _printService.PrintTruckInfo(truck, selectedClient.Name, fullNameAgent, cubMetr);
+            _printService.PrintTruckInfo(truck, selectedClient.Name, fullNameAgent, cubMetr, quantity);
 
             typeCargoBox.SelectedIndex = 0;
             clientsBox.SelectedIndex = 0;
@@ -308,11 +290,14 @@ namespace CementFactory
             label13.Visible = isVisible;
             cubMetrBox.Visible = isVisible;
             label9.Visible = isVisible;
+            label11.Visible = isVisible;
+            quantityBox.Visible = isVisible;
             
-            typeCargoBox.SelectedIndex = 0;
-            clientsBox.SelectedIndex = 0;
+            typeCargoBox.SelectedIndex = -1;
+            clientsBox.SelectedIndex = -1;
             fullNameContragentBox.Text = string.Empty;
             cubMetrBox.Text = string.Empty;
+            quantityBox.Text = string.Empty;
         }
         
         // Asynchronous method to call the status API and update the UI
@@ -382,27 +367,27 @@ namespace CementFactory
         private async void saveRecognizedPlateButton_Click(object sender, EventArgs e)
         {
             DisableAllButtons(false);
-            if (currrentStatusBox.SelectedIndex == 0)
+
+            if (enterCheckBox.Checked && WichCameraPressed == Constants.Constants.TruckEmptyStatus && string.IsNullOrEmpty(enterTextBoxCargo.Text))
             {
-                MessageBox.Show("Выберите статус машины!");
+                MessageBox.Show("Пожалуйста заполните поле, тип груза!");
                 DisableAllButtons(true);
                 return;
             }
             
-            var selectedStatus = (Item)currrentStatusBox.SelectedItem;
             var weight = double.Parse(currentWeight.Text);
             var plateNumber = currentPlateNumber.Text;
-            var whichCamera = wichCameraIsPressedBox.Text;
+            var whichCamera = WichCameraPressed;
             var isSuccess = true;
 
-            switch (selectedStatus.Name)
+            switch (CurrentStatus)
             {
                 case Constants.Constants.TruckEmptyStatus:
                 {
                     var truck = new Truck
                     {
                         plate_number = plateNumber,
-                        truck_status = selectedStatus.Name,
+                        truck_status = CurrentStatus,
                         weight_empty = weight,
                         Date = DateTime.Now
                     };
@@ -426,7 +411,7 @@ namespace CementFactory
                     truck.image_path = path;
 #endif
                 
-                    truck.truck_status = selectedStatus.Name;
+                    truck.truck_status = CurrentStatus;
                     truck.weight_full = weight;
                     truck.weight_difference = truck.weight_full - truck.weight_empty;
                     truck.Date = DateTime.Now;
@@ -442,10 +427,18 @@ namespace CementFactory
                         var truck = new Truck
                         {
                             plate_number = plateNumber,
-                            truck_status = selectedStatus.Name,
+                            truck_status = CurrentStatus,
                             weight_full = weight,
+                            type_cargo = enterTextBoxCargo.Text,
                             Date = DateTime.Now
                         };
+                        
+                        #if !DEBUG
+                        
+                        var path = await _dahuaService.SavePicture();
+                        truck.image_path = path;
+                        
+                        #endif
                     
                         _truckService.AddTruck(truck);
                     }
@@ -460,7 +453,7 @@ namespace CementFactory
                             break;
                         }
                 
-                        truck.truck_status = selectedStatus.Name;
+                        truck.truck_status = CurrentStatus;
                         truck.weight_empty = weight;
                         truck.weight_difference = truck.weight_full - truck.weight_empty;
                         truck.Date = DateTime.Now;
@@ -472,10 +465,9 @@ namespace CementFactory
                 }
             }
             
-            currrentStatusBox.SelectedIndex = 0;
             currentWeight.Text = string.Empty;
             currentPlateNumber.Text = string.Empty;
-            wichCameraIsPressedBox.Text = string.Empty;
+            WichCameraPressed = string.Empty;
             saveRecognizedPlateButton.Visible = false;
             cancelRecognizedPlate.Visible = false;
             DisableAllButtons(true);
@@ -489,12 +481,11 @@ namespace CementFactory
 
         private void cancelRecognizedPlate_Click(object sender, EventArgs e)
         {
-            currrentStatusBox.SelectedIndex = 0;
             currentWeight.Text = string.Empty;
             currentPlateNumber.Text = string.Empty;
             saveRecognizedPlateButton.Visible = false;
             cancelRecognizedPlate.Visible = false;
-            wichCameraIsPressedBox.Text = string.Empty;
+            WichCameraPressed = string.Empty;
             showRecognizedCumBoxes(false);
             MessageBox.Show("Отменен!");
         }
@@ -503,10 +494,37 @@ namespace CementFactory
         {
             label1.Visible = isShow;
             currentWeight.Visible = isShow;
-            currrentStatusBox.Visible = isShow;
-            label3.Visible = isShow;
             currentPlateNumber.Visible = isShow;
             label2.Visible = isShow;
+            saveRecognizedPlateButton.Visible = isShow;
+            cancelRecognizedPlate.Visible = isShow;
+            
+
+            if (enterCheckBox.Checked && WichCameraPressed == Constants.Constants.TruckEmptyStatus)
+            {
+                label3.Visible = isShow;
+                enterTextBoxCargo.Visible = isShow;
+            }
+            else
+            {
+                label3.Visible = false;
+                enterTextBoxCargo.Visible = false;
+            }
+        }
+
+        private void enterCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (enterCheckBox.Checked)
+            {
+                CurrentStatus = Constants.Constants.TruckReceiveStatus;
+                RecognizeCamFirst.Text = "Распознать загруженную машину";
+                RecognizeCamSecond.Text = "Распознать пустую машину";
+            }
+            else
+            {
+                RecognizeCamFirst.Text = "Распознать пустую машину";
+                RecognizeCamSecond.Text = "Распознать загруженную машину";
+            }
         }
     }
 }

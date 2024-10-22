@@ -15,15 +15,15 @@ namespace CementFactory.Services
             _webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
         }
 
-        public void PrintTruckInfo(Truck truck, string clientName, string fullNameAgent, string cubMetr)
+        public void PrintTruckInfo(Truck truck, string clientName, string fullNameAgent, string cubMetr, string quantity)
         {
-            var htmlContent = GenerateHtmlTemplate(truck, clientName, fullNameAgent, cubMetr);
+            var htmlContent = GenerateHtmlTemplate(truck, clientName, fullNameAgent, cubMetr, quantity);
             _webBrowser.DocumentText = htmlContent;
         }
 
         #region Private Methods
 
-        private string GenerateHtmlTemplate(Truck truck, string clientName, string driverFullName, string cubMetr)
+        private string GenerateHtmlTemplate(Truck truck, string clientName, string driverFullName, string cubMetr, string quantity)
         {
             var htmlTemplate = @"
             <html>
@@ -158,8 +158,8 @@ namespace CementFactory.Services
                                             <td>1</td>
                                             <td>{{TypeCargo}}</td>
                                             <td>куб.м</td>
-                                            <td>1</td>
                                             <td>{{CubMetr}}</td>
+                                            <td>{{Quantity}}</td>
                                             <td>{{WeightFull}}</td>
                                         </tr>
                                     </tbody>
@@ -259,8 +259,8 @@ namespace CementFactory.Services
                                             <td>1</td>
                                             <td>{{TypeCargo}}</td>
                                             <td>куб.м</td>
-                                            <td>1</td>
                                             <td>{{CubMetr}}</td>
+                                            <td>{{Quantity}}</td>
                                             <td>{{WeightFull}}</td>
                                         </tr>
                                     </tbody>
@@ -323,6 +323,7 @@ namespace CementFactory.Services
                 .Replace("{{Client}}", clientName)
                 .Replace("{{DriverFullName}}", driverFullName)
                 .Replace("{{CubMetr}}", cubMetr)
+                .Replace("{{Quantity}}", quantity)
                 .Replace("{{ID}}", truck.Id.ToString())
                 .Replace("{{WeightFull}}", truck.weight_full.ToString("F2"));
 
