@@ -4,7 +4,8 @@
     {
         public const string TruckEmptyStatus = "Пустой";
         public const string TruckFullStatus = "Загружен";
-        public const string TruckReceiveStatus = "Приход";
+        public const string TruckReceiveFullStatus = "Приход загруженный";
+        public const string TruckReceiveEmptyStatus = "Приход пустой";
         public const string OneCErrorStatus = "Не прошел";
         public const string OneCOkStatus = "Прошел";
     }

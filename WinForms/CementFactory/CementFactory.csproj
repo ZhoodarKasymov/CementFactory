@@ -138,6 +138,8 @@
       <Content Include="Scripts\test.py">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+      <EmbeddedResource Include="switch-icon-off-button.png" />
+      <EmbeddedResource Include="switch-icon-on-button.png" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
 </Project>

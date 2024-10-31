@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Text.RegularExpressions;
 using CementFactory.Models;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -80,22 +81,29 @@ namespace CementFactory.Services
             }
         }
         
-        public Truck GetLatestTruckByPlateAndStatus(string plateNumber, string status)
+        public IEnumerable<Truck> GetLatestTruckByPlateAndStatus(string plateNumber, string status)
         {
             if (!string.IsNullOrEmpty(plateNumber) && plateNumber.Length > 2)
             {
                 plateNumber = plateNumber.Substring(2);  // Remove the first 2 characters
+                plateNumber = Regex.Replace(plateNumber, @"\D", ""); // Remove all non-digit characters
             }
-            
+
             using (IDbConnection db = new MySqlConnection(_connectionString))
             {
-                var sql = @"SELECT * FROM truck 
-                       WHERE plate_number LIKE CONCAT('%', @PlateNumber, '%') 
-                       AND truck_status = @Status
-                       ORDER BY date DESC
-                       LIMIT 1"; 
+                var sql = @"
+                    SELECT t.* 
+                    FROM truck t
+                    INNER JOIN (
+                        SELECT plate_number, MAX(date) AS max_date
+                        FROM truck
+                        WHERE plate_number LIKE CONCAT('%', @PlateNumber, '%') 
+                          AND truck_status = @Status
+                        GROUP BY plate_number
+                    ) latest ON t.plate_number = latest.plate_number AND t.date = latest.max_date
+                    ORDER BY t.date DESC";
 
-                return db.QueryFirstOrDefault<Truck>(sql, new 
+                return db.Query<Truck>(sql, new 
                 { 
                     PlateNumber = plateNumber,
                     Status = status 

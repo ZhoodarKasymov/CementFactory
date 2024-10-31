@@ -66,9 +66,16 @@
             this.enterTextBoxCargo = new System.Windows.Forms.TextBox();
             this.quantityBox = new System.Windows.Forms.TextBox();
             this.label11 = new System.Windows.Forms.Label();
+            this.currentNumbersBox = new System.Windows.Forms.ComboBox();
+            this.label16 = new System.Windows.Forms.Label();
+            this.secondRadarLabel = new System.Windows.Forms.Label();
+            this.firstRadarPictureBox = new System.Windows.Forms.PictureBox();
+            this.secondRadarPictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.videoView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.videoView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.videoView3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.firstRadarPictureBox)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.secondRadarPictureBox)).BeginInit();
             this.SuspendLayout();
             // 
             // ButtonGroup
@@ -167,7 +174,7 @@
             this.showHistoryButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.showHistoryButton.FlatAppearance.BorderColor = System.Drawing.Color.White;
             this.showHistoryButton.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.showHistoryButton.Location = new System.Drawing.Point(926, 432);
+            this.showHistoryButton.Location = new System.Drawing.Point(934, 555);
             this.showHistoryButton.Name = "showHistoryButton";
             this.showHistoryButton.Size = new System.Drawing.Size(97, 20);
             this.showHistoryButton.TabIndex = 9;
@@ -460,12 +467,65 @@
             this.label11.TabIndex = 69;
             this.label11.Text = "Выход:";
             // 
+            // currentNumbersBox
+            // 
+            this.currentNumbersBox.FormattingEnabled = true;
+            this.currentNumbersBox.Location = new System.Drawing.Point(148, 414);
+            this.currentNumbersBox.Name = "currentNumbersBox";
+            this.currentNumbersBox.Size = new System.Drawing.Size(129, 21);
+            this.currentNumbersBox.TabIndex = 71;
+            // 
+            // label16
+            // 
+            this.label16.AutoSize = true;
+            this.label16.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label16.Location = new System.Drawing.Point(455, 405);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(107, 15);
+            this.label16.TabIndex = 72;
+            this.label16.Text = "Первый радар:";
+            // 
+            // secondRadarLabel
+            // 
+            this.secondRadarLabel.AutoSize = true;
+            this.secondRadarLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.secondRadarLabel.Location = new System.Drawing.Point(746, 405);
+            this.secondRadarLabel.Name = "secondRadarLabel";
+            this.secondRadarLabel.Size = new System.Drawing.Size(104, 15);
+            this.secondRadarLabel.TabIndex = 73;
+            this.secondRadarLabel.Text = "Второй радар:";
+            // 
+            // firstRadarPictureBox
+            // 
+            this.firstRadarPictureBox.Image = ((System.Drawing.Image)(resources.GetObject("firstRadarPictureBox.Image")));
+            this.firstRadarPictureBox.Location = new System.Drawing.Point(558, 390);
+            this.firstRadarPictureBox.Name = "firstRadarPictureBox";
+            this.firstRadarPictureBox.Size = new System.Drawing.Size(62, 52);
+            this.firstRadarPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.firstRadarPictureBox.TabIndex = 74;
+            this.firstRadarPictureBox.TabStop = false;
+            // 
+            // secondRadarPictureBox
+            // 
+            this.secondRadarPictureBox.Image = ((System.Drawing.Image)(resources.GetObject("secondRadarPictureBox.Image")));
+            this.secondRadarPictureBox.Location = new System.Drawing.Point(847, 390);
+            this.secondRadarPictureBox.Name = "secondRadarPictureBox";
+            this.secondRadarPictureBox.Size = new System.Drawing.Size(62, 52);
+            this.secondRadarPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.secondRadarPictureBox.TabIndex = 75;
+            this.secondRadarPictureBox.TabStop = false;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(1035, 587);
+            this.Controls.Add(this.secondRadarPictureBox);
+            this.Controls.Add(this.firstRadarPictureBox);
+            this.Controls.Add(this.secondRadarLabel);
+            this.Controls.Add(this.label16);
+            this.Controls.Add(this.currentNumbersBox);
             this.Controls.Add(this.quantityBox);
             this.Controls.Add(this.label11);
             this.Controls.Add(this.enterTextBoxCargo);
@@ -507,14 +567,25 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
-            this.Text = "Цементный завод";
+            this.Text = "ОсОО \"Глобал Бетон\"";
             this.Load += new System.EventHandler(this.MainForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.videoView1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.videoView2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.videoView3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.firstRadarPictureBox)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.secondRadarPictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
         }
+
+        private System.Windows.Forms.PictureBox firstRadarPictureBox;
+
+        private System.Windows.Forms.PictureBox secondRadarPictureBox;
+
+        private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.Label secondRadarLabel;
+
+        private System.Windows.Forms.ComboBox currentNumbersBox;
 
         private System.Windows.Forms.TextBox quantityBox;
         private System.Windows.Forms.Label label11;

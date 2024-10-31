@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CementFactory.Models;
@@ -33,7 +35,7 @@ namespace CementFactory
         {
             InitializeComponent();
             Core.Initialize();
-            
+
             // Hide when init
             VisibleNotVisibleButtons(false);
             showRecognizedCumBoxes(false);
@@ -41,13 +43,15 @@ namespace CementFactory
             cancelRecognizedPlate.Visible = false;
             typeCargoBox.SelectedIndex = -1;
             clientsBox.SelectedIndex = -1;
+            currentPlateNumber.Visible = false;
+            currentNumbersBox.Visible = false;
 
             _truckService = new TruckService();
             _printService = new PrintService();
             _service1C = new Service1C();
             _dahuaService = new DahuaService();
             _barrierService = new BarrierService();
-            
+
             _libVlc = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVlc);
             _mediaPlayer2 = new MediaPlayer(_libVlc);
@@ -56,12 +60,13 @@ namespace CementFactory
             videoView1.MediaPlayer = _mediaPlayer;
             videoView2.MediaPlayer = _mediaPlayer2;
             videoView3.MediaPlayer = _mediaPlayer3;
-            
+
 #if !DEBUG
             // Initialize Timer with 1 second interval
             _statusTimer = new System.Timers.Timer(1000); // 1 seconds
             _statusTimer.Elapsed += async (sender, e) => await CheckBarrierStatusAsync();
             _statusTimer.Elapsed += async (sender, e) => await CheckWeightStatusAsync();
+            _statusTimer.Elapsed += async (sender, e) => await CheckRadarsStatusAsync();
             _statusTimer.AutoReset = true;
             _statusTimer.Enabled = true;
 #endif
@@ -75,17 +80,6 @@ namespace CementFactory
 
         private async void MainForm_Load(object sender, EventArgs e)
         {
-            var goods = await _service1C.GetProductsAsync();
-            var clients = await _service1C.GetAgentsAsync();
-            
-            typeCargoBox.DataSource = goods;
-            typeCargoBox.DisplayMember = "Name";
-            typeCargoBox.ValueMember = "Guid";
-            
-            clientsBox.DataSource = clients;
-            clientsBox.DisplayMember = "Name";
-            clientsBox.ValueMember = "Guid";
-            
             var firstCamIp = ConfigurationManager.AppSettings["EnterANPRCam"];
             var secondCamIp = ConfigurationManager.AppSettings["ExitANPRCam"];
             var thirdCamIp = ConfigurationManager.AppSettings["PhotoCam"];
@@ -99,7 +93,7 @@ namespace CementFactory
 
 #if DEBUG
             rtspUrl1 = "http://67.53.46.161:65123/mjpg/video.mjpg";
-            rtspUrl2= "http://67.53.46.161:65123/mjpg/video.mjpg";
+            rtspUrl2 = "http://67.53.46.161:65123/mjpg/video.mjpg";
             rtspUrl3 = "http://67.53.46.161:65123/mjpg/video.mjpg";
 #endif
             _mediaPlayer.Play(new Media(_libVlc, rtspUrl1, FromType.FromLocation));
@@ -138,12 +132,22 @@ namespace CementFactory
         {
             DisableAllButtons(false);
             var firstCamIp = ConfigurationManager.AppSettings["EnterANPRCam"];
-            var recognizedPlate = _dahuaService.GetPlateNumber(firstCamIp);
-            double weight = 1000;
+
+            // Start both tasks simultaneously
+            var recognizePlateTask = Task.Run(() => _dahuaService.GetPlateNumber(firstCamIp));
+            var weightTask = Task.FromResult<double?>(1500);
+
 #if !DEBUG
-            weight = await _barrierService.StartWeightRequests() ?? 0;
+            weightTask = _barrierService.StartWeightRequests();
 #endif
-            
+
+            // Wait for both tasks to complete
+            await Task.WhenAll(recognizePlateTask, weightTask);
+
+            // Get the results
+            var recognizedPlate = await recognizePlateTask;
+            var weight = weightTask.Result ?? 0; // If the weight is null, assign 0
+
             if (!string.IsNullOrEmpty(recognizedPlate.Error))
             {
                 MessageBox.Show("Машина не распознан!");
@@ -153,13 +157,16 @@ namespace CementFactory
                 MessageBox.Show("Машина распознана, чтобы продолжить сохраните данные!");
                 currentWeight.Text = weight.ToString(CultureInfo.InvariantCulture);
                 currentPlateNumber.Text = recognizedPlate.PlateNumber;
-                
+
                 WichCameraPressed = Constants.Constants.TruckEmptyStatus;
-                CurrentStatus = enterCheckBox.Checked ? Constants.Constants.TruckReceiveStatus : Constants.Constants.TruckEmptyStatus;
-                
+                CurrentStatus = enterCheckBox.Checked
+                    ? Constants.Constants.TruckReceiveFullStatus
+                    : Constants.Constants.TruckEmptyStatus;
+
                 showRecognizedCumBoxes(true);
+                currentPlateNumber.Visible = true;
             }
-            
+
             DisableAllButtons(true);
         }
 
@@ -167,11 +174,22 @@ namespace CementFactory
         {
             DisableAllButtons(false);
             var secondCamIp = ConfigurationManager.AppSettings["ExitANPRCam"];
-            var recognizedPlate = _dahuaService.GetPlateNumber(secondCamIp);
-            double weight = 1500;
+
+            // Start both tasks concurrently
+            var recognizePlateTask = Task.Run(() => _dahuaService.GetPlateNumber(secondCamIp));
+            var weightTask = Task.FromResult<double?>(1500);
+
 #if !DEBUG
-            weight = await _barrierService.StartWeightRequests() ?? 0;
+            weightTask = _barrierService.StartWeightRequests();
 #endif
+
+            // Wait for both tasks to complete
+            await Task.WhenAll(recognizePlateTask, weightTask);
+
+            // Get the results
+            var recognizedPlate = await recognizePlateTask;
+            var weight = weightTask.Result ?? 0; // Assign 0 if weight is null
+
             if (!string.IsNullOrEmpty(recognizedPlate.Error))
             {
                 MessageBox.Show("Машина не распознан!");
@@ -182,42 +200,68 @@ namespace CementFactory
                 currentWeight.Text = weight.ToString(CultureInfo.InvariantCulture);
                 currentPlateNumber.Text = recognizedPlate.PlateNumber;
                 
-                WichCameraPressed = Constants.Constants.TruckFullStatus;
-                CurrentStatus = enterCheckBox.Checked ? Constants.Constants.TruckReceiveStatus : Constants.Constants.TruckFullStatus;
+                CurrentStatus = enterCheckBox.Checked
+                    ? Constants.Constants.TruckReceiveFullStatus
+                    : Constants.Constants.TruckFullStatus;
+
+                var searchStatus = enterCheckBox.Checked
+                    ? Constants.Constants.TruckReceiveFullStatus
+                    : Constants.Constants.TruckEmptyStatus;
+
+                var trucks = _truckService.GetLatestTruckByPlateAndStatus(recognizedPlate.PlateNumber, searchStatus);
                 
+                if (!trucks.Any())
+                {
+                    MessageBox.Show($"Машина {recognizedPlate.PlateNumber} в базе со статусом \"{searchStatus}\" не найден!");
+                    DisableAllButtons(true);
+                    return;
+                }
+                
+                currentNumbersBox.DataSource = trucks;
+                currentNumbersBox.DisplayMember = "plate_number";
+                currentNumbersBox.ValueMember = "Id";
+
+                WichCameraPressed = Constants.Constants.TruckFullStatus;
+                
+
                 showRecognizedCumBoxes(true);
+                currentNumbersBox.Visible = true;
             }
-            
+
             DisableAllButtons(true);
         }
 
         private async void SaveAndPrint_Click(object sender, EventArgs e)
         {
             DisableAllButtons(false);
-            if (typeCargoBox.SelectedIndex == 0)
+            if (typeCargoBox.SelectedIndex == -1)
             {
                 MessageBox.Show("Выберите тип груза!");
                 DisableAllButtons(true);
                 return;
             }
-            if (clientsBox.SelectedIndex == 0)
+
+            if (clientsBox.SelectedIndex == -1)
             {
                 MessageBox.Show("Выберите контрагента!");
                 DisableAllButtons(true);
                 return;
             }
+
             if (string.IsNullOrEmpty(fullNameContragentBox.Text))
             {
                 MessageBox.Show("Пропишите ФИО!");
                 DisableAllButtons(true);
                 return;
             }
+
             if (string.IsNullOrEmpty(cubMetrBox.Text))
             {
                 MessageBox.Show("Пропишите Куб.м!");
                 DisableAllButtons(true);
                 return;
             }
+
             if (string.IsNullOrEmpty(quantityBox.Text))
             {
                 MessageBox.Show("Пропишите кол-во!");
@@ -230,32 +274,30 @@ namespace CementFactory
             var fullNameAgent = fullNameContragentBox.Text;
             var cubMetr = cubMetrBox.Text;
             var quantity = quantityBox.Text;
+
+            var selectedPlateNumber = (Truck)currentNumbersBox.SelectedItem;
+            var truck = _truckService.GetTruckById(selectedPlateNumber.Id);
             
-            var lastFoundPlateNumber = currentPlateNumber.Text;
+            var result1C = await _service1C.GoodsMoving(new SaleRequest
+            {
+                Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                Goods = new List<SaleItem>
+                {
+                    new SaleItem
+                    {
+                        Count = 1,
+                        Guid = selectedGood.Guid,
+                        Weight = double.Parse(cubMetr)
+                    }
+                },
+                WarehouseRecipient = selectedClient.Guid,
+                CarNumber = truck.plate_number
+            });
             
-            var truck = _truckService.GetLatestTruckByPlateAndStatus(lastFoundPlateNumber, Constants.Constants.TruckFullStatus);
-            //TODO:Need to wait changes from Cement factory
-            // var result1C = await _service1C.SaveSaleAsync(new SaleRequest
-            // {
-            //     Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-            //     Goods = new List<SaleItem>
-            //     {
-            //         new SaleItem
-            //         {
-            //             Count = 1,
-            //             Guid = selectedGood.Guid,
-            //             Weight = truck.weight_full
-            //         }
-            //     },
-            //     ClientGuid = selectedClient.Guid,
-            //     CarNumber = truck.plate_number
-            // });
-            //
-            // truck.c1_status = result1C ? Constants.Constants.OneCOkStatus : Constants.Constants.OneCErrorStatus;
-            truck.c1_status = Constants.Constants.OneCErrorStatus;
+            truck.c1_status = result1C ? Constants.Constants.OneCErrorStatus : Constants.Constants.OneCOkStatus;
             truck.type_cargo = selectedGood.Name;
             truck.cub_metr = cubMetr;
-            
+
             _truckService.UpdateTruck(truck);
             _printService.PrintTruckInfo(truck, selectedClient.Name, fullNameAgent, cubMetr, quantity);
 
@@ -292,19 +334,19 @@ namespace CementFactory
             label9.Visible = isVisible;
             label11.Visible = isVisible;
             quantityBox.Visible = isVisible;
-            
+
             typeCargoBox.SelectedIndex = -1;
             clientsBox.SelectedIndex = -1;
             fullNameContragentBox.Text = string.Empty;
             cubMetrBox.Text = string.Empty;
             quantityBox.Text = string.Empty;
         }
-        
+
         // Asynchronous method to call the status API and update the UI
         private async Task CheckBarrierStatusAsync()
         {
             var ip = ConfigurationManager.AppSettings["BarrierServer"];
-            
+
             try
             {
                 using (var httpClient = new HttpClient())
@@ -321,11 +363,35 @@ namespace CementFactory
                 // Log the error or handle it appropriately
             }
         }
+        
+        
+        private async Task CheckRadarsStatusAsync()
+        {
+            var ip = ConfigurationManager.AppSettings["BarrierServer"];
+
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var responseRadar1 = await httpClient.GetStringAsync($"http://{ip}/status_radar_1.cgi");
+                    var responseRadar2 = await httpClient.GetStringAsync($"http://{ip}/status_radar_2.cgi");
+                    var radar1status = responseRadar1.Trim().Equals("FALSE", StringComparison.OrdinalIgnoreCase);
+                    var radar2status = responseRadar2.Trim().Equals("FALSE", StringComparison.OrdinalIgnoreCase);
+
+                    // Update the UI on the main thread
+                    Invoke((Action)(() => UpdateRadarsStatus(radar1status, radar2status)));
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error or handle it appropriately
+            }
+        }
 
         private async Task CheckWeightStatusAsync()
         {
             var ip = ConfigurationManager.AppSettings["BarrierServer"];
-            
+
             try
             {
                 using (var httpClient = new HttpClient())
@@ -339,7 +405,7 @@ namespace CementFactory
                 // Log the error or handle it appropriately
             }
         }
-        
+
         private void UpdateWeightStatus(string wight)
         {
             label15.Text = wight;
@@ -363,18 +429,33 @@ namespace CementFactory
                 OpenGate.ForeColor = Color.Black;
             }
         }
+        
+        private void UpdateRadarsStatus(bool firstRadar, bool secondRadar)
+        {
+            SetEmbeddedImageToPictureBox(firstRadarPictureBox, firstRadar ? "switch-icon-on-button.png" : "switch-icon-off-button.png");
+            SetEmbeddedImageToPictureBox(secondRadarPictureBox, secondRadar ? "switch-icon-on-button.png" : "switch-icon-off-button.png");
+        }
 
         private async void saveRecognizedPlateButton_Click(object sender, EventArgs e)
         {
             DisableAllButtons(false);
 
-            if (enterCheckBox.Checked && WichCameraPressed == Constants.Constants.TruckEmptyStatus && string.IsNullOrEmpty(enterTextBoxCargo.Text))
+            if (enterCheckBox.Checked && WichCameraPressed == Constants.Constants.TruckEmptyStatus &&
+                string.IsNullOrEmpty(enterTextBoxCargo.Text))
             {
                 MessageBox.Show("Пожалуйста заполните поле, тип груза!");
                 DisableAllButtons(true);
                 return;
             }
-            
+            if (!enterCheckBox.Checked 
+                && WichCameraPressed == Constants.Constants.TruckFullStatus 
+                && currentNumbersBox.SelectedIndex == -1)
+            {
+                MessageBox.Show("Выберите номер машины из предложенного списка!");
+                DisableAllButtons(true);
+                return;
+            }
+
             var weight = double.Parse(currentWeight.Text);
             var plateNumber = currentPlateNumber.Text;
             var whichCamera = WichCameraPressed;
@@ -391,36 +472,41 @@ namespace CementFactory
                         weight_empty = weight,
                         Date = DateTime.Now
                     };
-                    
+
                     _truckService.AddTruck(truck);
                     break;
                 }
                 case Constants.Constants.TruckFullStatus:
                 {
-                    var truck = _truckService.GetLatestTruckByPlateAndStatus(plateNumber, Constants.Constants.TruckEmptyStatus);
+                    var goods = await _service1C.GetProductsAsync();
+                    var clients = await _service1C.GetClientsWarehouses();
 
-                    if (truck is null)
-                    {
-                        MessageBox.Show($"Машина {plateNumber} в базе со статусом \"Пустой\" не найден!");
-                        isSuccess = false;
-                        break;
-                    }
+                    typeCargoBox.DataSource = goods;
+                    typeCargoBox.DisplayMember = "Name";
+                    typeCargoBox.ValueMember = "Guid";
+
+                    clientsBox.DataSource = clients;
+                    clientsBox.DisplayMember = "Name";
+                    clientsBox.ValueMember = "Guid";
+                    
+                    var selectedPlateNumber = (Truck)currentNumbersBox.SelectedItem;
+                    var truck = _truckService.GetTruckById(selectedPlateNumber.Id);
 
 #if !DEBUG
                     var path = await _dahuaService.SavePicture();
                     truck.image_path = path;
 #endif
-                
+
                     truck.truck_status = CurrentStatus;
                     truck.weight_full = weight;
                     truck.weight_difference = truck.weight_full - truck.weight_empty;
                     truck.Date = DateTime.Now;
-                
+
                     _truckService.UpdateTruck(truck);
                     VisibleNotVisibleButtons(true);
                     break;
                 }
-                case Constants.Constants.TruckReceiveStatus:
+                case Constants.Constants.TruckReceiveFullStatus:
                 {
                     if (whichCamera == Constants.Constants.TruckEmptyStatus)
                     {
@@ -432,47 +518,42 @@ namespace CementFactory
                             type_cargo = enterTextBoxCargo.Text,
                             Date = DateTime.Now
                         };
-                        
-                        #if !DEBUG
-                        
+
+#if !DEBUG
                         var path = await _dahuaService.SavePicture();
                         truck.image_path = path;
-                        
-                        #endif
-                    
+#endif
+
                         _truckService.AddTruck(truck);
                     }
                     else if (whichCamera == Constants.Constants.TruckFullStatus)
                     {
-                        var truck = _truckService.GetLatestTruckByPlateAndStatus(plateNumber, Constants.Constants.TruckReceiveStatus);
+                        var selectedPlateNumber = (Truck)currentNumbersBox.SelectedItem;
+                        var truck = _truckService.GetTruckById(selectedPlateNumber.Id);
 
-                        if (truck is null)
-                        {
-                            MessageBox.Show($"Машина {plateNumber} в базе со статусом \"Приход\" не найден!");
-                            isSuccess = false;
-                            break;
-                        }
-                
-                        truck.truck_status = CurrentStatus;
+                        truck.truck_status = Constants.Constants.TruckReceiveEmptyStatus;
                         truck.weight_empty = weight;
                         truck.weight_difference = truck.weight_full - truck.weight_empty;
                         truck.Date = DateTime.Now;
-                
+
                         _truckService.UpdateTruck(truck);
                     }
-                    
+
                     break;
                 }
             }
-            
+
             currentWeight.Text = string.Empty;
             currentPlateNumber.Text = string.Empty;
             WichCameraPressed = string.Empty;
+            enterTextBoxCargo.Text = string.Empty;
             saveRecognizedPlateButton.Visible = false;
             cancelRecognizedPlate.Visible = false;
             DisableAllButtons(true);
             showRecognizedCumBoxes(false);
-            
+            currentPlateNumber.Visible = false;
+            currentNumbersBox.Visible = false;
+
             if (isSuccess)
             {
                 MessageBox.Show("Данные сохранены в базе!");
@@ -483,10 +564,13 @@ namespace CementFactory
         {
             currentWeight.Text = string.Empty;
             currentPlateNumber.Text = string.Empty;
+            currentNumbersBox.DataSource = null;
             saveRecognizedPlateButton.Visible = false;
             cancelRecognizedPlate.Visible = false;
             WichCameraPressed = string.Empty;
             showRecognizedCumBoxes(false);
+            currentPlateNumber.Visible = false;
+            currentNumbersBox.Visible = false;
             MessageBox.Show("Отменен!");
         }
 
@@ -494,11 +578,9 @@ namespace CementFactory
         {
             label1.Visible = isShow;
             currentWeight.Visible = isShow;
-            currentPlateNumber.Visible = isShow;
             label2.Visible = isShow;
             saveRecognizedPlateButton.Visible = isShow;
             cancelRecognizedPlate.Visible = isShow;
-            
 
             if (enterCheckBox.Checked && WichCameraPressed == Constants.Constants.TruckEmptyStatus)
             {
@@ -516,7 +598,6 @@ namespace CementFactory
         {
             if (enterCheckBox.Checked)
             {
-                CurrentStatus = Constants.Constants.TruckReceiveStatus;
                 RecognizeCamFirst.Text = "Распознать загруженную машину";
                 RecognizeCamSecond.Text = "Распознать пустую машину";
             }
@@ -524,6 +605,29 @@ namespace CementFactory
             {
                 RecognizeCamFirst.Text = "Распознать пустую машину";
                 RecognizeCamSecond.Text = "Распознать загруженную машину";
+            }
+        }
+        
+        private void SetEmbeddedImageToPictureBox(PictureBox pictureBox, string imageName)
+        {
+            // Ensure the image name includes the correct namespace and filename
+            var resourceName = $"CementFactory.{imageName}";
+
+            // Get the executing assembly
+            var assembly = Assembly.GetExecutingAssembly();
+
+            // Load the image stream
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream != null)
+                {
+                    pictureBox.Image = Image.FromStream(stream);
+                }
+                else
+                {
+                    MessageBox.Show($"Image '{imageName}' not found as an embedded resource.");
+                    Log.Error($"Image '{imageName}' not found as an embedded resource.");
+                }
             }
         }
     }

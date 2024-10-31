@@ -7,7 +7,8 @@ namespace CementFactory.Models
     {
         public string Date { get; set; }
         public string CarNumber { get; set; }
-        public string ClientGuid { get; set; }
+        public string WarehouseSender { get; set; }
+        public string WarehouseRecipient { get; set; }
         public List<SaleItem> Goods { get; set; }
     }
 
