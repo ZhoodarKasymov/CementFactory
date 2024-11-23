@@ -122,6 +122,9 @@
       <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.20" />
     </ItemGroup>
     <ItemGroup>
+      <Content Include="counter.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
       <Content Include="Readme.md" />
       <Content Include="Scripts\anpr_get_plate_numbers.py">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>

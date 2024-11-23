@@ -28,6 +28,22 @@ namespace CementFactory.Services
 
         public async Task<List<Item>> GetProductsAsync()
         {
+#if DEBUG
+            return new List<Item>
+            {
+                new Item
+                {
+                    Guid = "test product",
+                    Name = "Test product",
+                },
+                new Item
+                {
+                    Guid = "test product 2",
+                    Name = "Test product 2",
+                },
+            };
+#endif
+            
             using (var client = CreateHttpClient())
             {
                 var response = await client.GetAsync(_baseUrl + "goods");
@@ -40,6 +56,22 @@ namespace CementFactory.Services
         
         public async Task<List<Item>> GetClientsWarehouses()
         {
+#if DEBUG
+            return new List<Item>
+            {
+                new Item
+                {
+                    Guid = "test client",
+                    Name = "Test Client",
+                },
+                new Item
+                {
+                    Guid = "test client 2",
+                    Name = "Test Client 2",
+                },
+            };
+#endif
+            
             using (var client = CreateHttpClient())
             {
                 var response = await client.GetAsync(_baseUrl + "customerWarehouse");
@@ -52,6 +84,10 @@ namespace CementFactory.Services
         
         public async Task<bool> GoodsMoving(SaleRequest saleRequest)
         {
+#if DEBUG
+            return true;
+#endif
+            
             var senderWarehouseId = ConfigurationManager.AppSettings["GlobalCementWarehouseId"];
             saleRequest.WarehouseSender = senderWarehouseId;
 

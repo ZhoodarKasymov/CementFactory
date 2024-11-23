@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using System.IO;
 using System.Windows.Forms;
 using CementFactory.Models;
 
@@ -7,12 +8,16 @@ namespace CementFactory.Services
     public class PrintService
     {
         private readonly WebBrowser _webBrowser;
+        private string filePath = Path.Combine(Application.StartupPath, "counter.txt");
+        private static readonly object fileLock = new object();
+        private int counterValue;
 
         public PrintService()
         {
             // Initialize the WebBrowser control without adding it to a form
             _webBrowser = new WebBrowser();
             _webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
+            LoadCounterValue();
         }
 
         public void PrintTruckInfo(Truck truck, string clientName, string fullNameAgent, string cubMetr, string quantity)
@@ -25,6 +30,8 @@ namespace CementFactory.Services
 
         private string GenerateHtmlTemplate(Truck truck, string clientName, string driverFullName, string cubMetr, string quantity)
         {
+            counterValue++;
+            
             var htmlTemplate = @"
             <html>
                 <head>
@@ -324,7 +331,7 @@ namespace CementFactory.Services
                 .Replace("{{DriverFullName}}", driverFullName)
                 .Replace("{{CubMetr}}", cubMetr)
                 .Replace("{{Quantity}}", quantity)
-                .Replace("{{ID}}", truck.Id.ToString())
+                .Replace("{{ID}}", counterValue.ToString())
                 .Replace("{{WeightFull}}", truck.weight_full.ToString("F2"));
 
             return htmlTemplate;
@@ -333,6 +340,29 @@ namespace CementFactory.Services
         private void WebBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
             _webBrowser.Print();
+            SaveCounterValue();
+        }
+        
+        private void LoadCounterValue()
+        {
+            var value = File.ReadAllText(filePath);
+            
+            if (int.TryParse(value, out var parsedValue))
+            {
+                counterValue = parsedValue;
+            }
+            else
+            {
+                counterValue = 1510;
+            }
+        }
+
+        private void SaveCounterValue()
+        {
+            lock (fileLock)
+            {
+                File.WriteAllText(filePath, counterValue.ToString());
+            }
         }
 
         #endregion
