@@ -141,10 +141,11 @@
         });
 
 
-        $(document).on('click', '.image-link', function (event) {
+        $(document).on('click', '.image-link', function (event) {        
             event.preventDefault();
             const imagePath = $(this).attr('data-image');
-            $('#modalImage').attr('src', imagePath);
+            let fullImageUrl = `/api/file-upload/get-image?imageUrl=${encodeURIComponent(imagePath)}`;
+            $("#modalImage").attr("src", fullImageUrl);
             const modal = new bootstrap.Modal($('#imageModal'));
             modal.show();
         });

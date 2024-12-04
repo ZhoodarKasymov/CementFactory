@@ -5,6 +5,12 @@ namespace CementFactoryAdmin.Controllers;
 public class FileUploadController : Controller
 {
     private readonly string _savePath = @"D:\CamScreenshots"; // Folder to save files
+    private readonly HttpClient _httpClient;
+    
+    public FileUploadController(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
 
     [HttpPost("api/file-upload/upload")]
     public async Task<IActionResult> UploadFile(IFormFile? file)
@@ -37,5 +43,23 @@ public class FileUploadController : Controller
         {
             return StatusCode(500, $"Ошибка сервера!");
         }
+    }
+    
+    [HttpGet("api/file-upload/get-image")]
+    public async Task<IActionResult> GetImage(string imageUrl)
+    {
+        if(string.IsNullOrEmpty(imageUrl))
+            return BadRequest("ImageUrl is null!");
+        
+        var response = await _httpClient.GetAsync(imageUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            var imageBytes = await response.Content.ReadAsByteArrayAsync();
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+            return File(imageBytes, contentType);
+        }
+
+        // Handle the case where the image is not found
+        return NotFound("Image not found");
     }
 }

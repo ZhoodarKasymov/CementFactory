@@ -15,6 +15,7 @@ builder.Services.AddScoped<IDbConnection>(sp => new MySqlConnection(connectionSt
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<TruckService>();
+builder.Services.AddHttpClient();
 
 // Add Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
