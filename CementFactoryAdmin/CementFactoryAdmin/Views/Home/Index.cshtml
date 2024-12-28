@@ -12,6 +12,11 @@
         display: block;
     }
 
+    #chart-container {
+        display: none;
+    }
+        
+
     #chart-container canvas {
         max-width: 100%;
         height: auto !important;
@@ -102,7 +107,7 @@
                 <div class="col-sm-12 col-md-5 pt-5">
                     <canvas id="doughnutChart" style="display: none;"></canvas>
                 </div>
-                <div class="col-sm-12 col-md-7">
+                <div class="col-sm-12 col-md-7" style="height: 600px !important;">
                     <canvas id="barChart" style="margin-top: 50px;display: none;"></canvas>
                 </div>
             </div>
@@ -111,7 +116,7 @@
                 <div class="col-sm-12 col-md-5 pt-5">
                     <canvas id="doughnutChartSecond" style="display: none;"></canvas>
                 </div>
-                <div class="col-sm-12 col-md-7">
+                <div class="col-sm-12 col-md-7" style="height: 600px !important;">
                     <canvas id="barChartSecond" style="margin-top: 50px;display: none;"></canvas>
                 </div>
             </div>
@@ -153,10 +158,12 @@
                 $("#viewByCubMetrWrapper").show();
                 $("#viewByFullWeightWrapper").show();
                 $(".header_charts").show();
+                $("#chart-container").show();
             }else{
                 $("#viewByCubMetrWrapper").hide();
                 $("#viewByFullWeightWrapper").hide();
                 $(".header_charts").hide();
+                $("#chart-container").hide();
             }
         });
 
@@ -260,6 +267,7 @@
     function generateTruckTable(data) {
         $("#table-container").show();
         $("#chart-container").hide();
+        $("#pagination").show();
 
         let table = $("<table>").addClass("table table-striped table-bordered");
         let thead = $("<thead>").appendTo(table);
@@ -380,9 +388,33 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
-                    x: { title: { display: true, text: 'Дата' } },
-                    y: { title: { display: true, text: 'Сумма ' + (filterBy === 'cub_metr' ? 'в куб.м' : 'в кг') } }
+                    x: { title: { display: true, text: 'Дата' },
+                        ticks: {
+                            font: {
+                                size: 10 // Уменьшаем шрифт подписей для мобильных устройств
+                            }
+                        }
+                     },
+                    y: { title: { display: true, text: 'Сумма ' + (filterBy === 'cub_metr' ? 'в куб.м' : 'в кг') },
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: 10 // Уменьшаем шрифт подписей для оси Y
+                            },
+                            precision: 0  // Исключаем дробные значения
+                        }
+                     }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: {
+                                size: 10 // Уменьшаем размер шрифта легенды
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -422,9 +454,15 @@
             },
             options: {
                 responsive: true,
-                title: {
-                    display: true,
-                    text: 'Распределение по сумме ' + (filterBy === 'cub_metr' ? 'куб.м' : 'кг')
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Распределение по сумме ' + (filterBy === 'cub_metr' ? 'куб.м' : 'кг'),
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12, // Адаптивный размер шрифта
+                            weight: 'bold' // Делает заголовок жирным
+                        }
+                    }
                 }
             }
         });
@@ -469,7 +507,11 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Распределение типов груза'
+                        text: 'Распределение типов груза',
+                        font: {
+                            size: window.innerWidth < 768 ? 10 : 12, // Адаптивный размер шрифта
+                            weight: 'bold' // Делает заголовок жирным
+                        }
                     }
                 }
             }
@@ -520,9 +562,32 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
-                    x: { title: { display: true, text: 'Дата' } },
-                    y: { title: { display: true, text: 'Количество' } }
+                    x: { title: { display: true, text: 'Дата' },
+                        ticks: {
+                            font: {
+                                size: 10 // Уменьшаем шрифт подписей для мобильных устройств
+                            }
+                        } },
+                    y: { title: { display: true, text: 'Количество' },
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: 10 // Уменьшаем шрифт подписей для оси Y
+                            },
+                            precision: 0  // Исключаем дробные значения
+                        }
+                     }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: {
+                                size: 10 // Уменьшаем размер шрифта легенды
+                            }
+                        }
+                    }
                 }
             }
         });

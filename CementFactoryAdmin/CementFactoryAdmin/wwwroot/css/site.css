@@ -109,9 +109,3 @@ body {
   z-index: 999;
   display: none;
 }
-
-#doughnutChartSecond,
-#doughnutChart {
-  width: 360px !important;
-  height: 350px !important;
-}
