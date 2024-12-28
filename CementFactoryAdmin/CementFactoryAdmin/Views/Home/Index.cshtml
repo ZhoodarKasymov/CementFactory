@@ -4,6 +4,26 @@
     Layout = "_Layout";
 }
 
+<style>
+    #table-container table {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+    }
+
+    #chart-container canvas {
+        max-width: 100%;
+        height: auto !important;
+    }
+    
+    @@media (max-width: 768px) {    
+        #chart-container .row {
+            flex-direction: column;
+        }
+    }
+</style>
+
 <div class="container mt-5 mb-5">
     <div id="loader"></div>
     <div id="overlay"></div>
@@ -59,29 +79,6 @@
         <div id="table-container">
             <!-- The truck table will be generated here -->
         </div>
-        <div id="chart-container" class="mt-5">
-            <h1 class="header_charts" style="text-align: center;display: none;">График по кол-ву машин</h1>
-            <div class="row">
-                <div class="col-5 pt-5">
-                    <canvas id="doughnutChart" style="display: none;"></canvas>
-                </div>
-                <div class="col-7">
-                    <canvas id="barChart" style="margin-top: 50px;display: none;"></canvas>
-                </div>
-            </div>
-            <h1 class="header_charts" style="text-align: center;display: none;">График по сумме куб.м либо кг</h1>
-            <div class="row">
-                <div class="col-5 pt-5">
-                    <canvas id="doughnutChartSecond" style="display: none;"></canvas>
-                </div>
-                <div class="col-7">
-                    <canvas id="barChartSecond" style="margin-top: 50px;display: none;"></canvas>
-                </div>
-            </div>
-        </div>
-        <div id="pagination" class="text-center mt-4">
-            <!-- Pagination buttons will be generated here -->
-        </div>
         <!-- Modal -->
         <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -98,6 +95,29 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div id="chart-container" class="mt-5">
+            <h1 class="header_charts" style="text-align: center;display: none;">График по кол-ву машин</h1>
+            <div class="row">
+                <div class="col-sm-12 col-md-5 pt-5">
+                    <canvas id="doughnutChart" style="display: none;"></canvas>
+                </div>
+                <div class="col-sm-12 col-md-7">
+                    <canvas id="barChart" style="margin-top: 50px;display: none;"></canvas>
+                </div>
+            </div>
+            <h1 class="header_charts" style="text-align: center;display: none;">График по сумме куб.м либо кг</h1>
+            <div class="row">
+                <div class="col-sm-12 col-md-5 pt-5">
+                    <canvas id="doughnutChartSecond" style="display: none;"></canvas>
+                </div>
+                <div class="col-sm-12 col-md-7">
+                    <canvas id="barChartSecond" style="margin-top: 50px;display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div id="pagination" class="text-center mt-4">
+            <!-- Pagination buttons will be generated here -->
         </div>
     </main>
 </div>
@@ -419,10 +439,8 @@
         }
 
         let cargoTypeCount = {};
-
-        // Count the number of each non-empty cargo type
         data.forEach(truck => {
-            if (truck.type_cargo) { // Exclude empty cargo types
+            if (truck.type_cargo) {
                 cargoTypeCount[truck.type_cargo] = (cargoTypeCount[truck.type_cargo] || 0) + 1;
             }
         });
@@ -448,9 +466,11 @@
             },
             options: {
                 responsive: true,
-                title: {
-                    display: true,
-                    text: 'Распределение типов груза'
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Распределение типов груза'
+                    }
                 }
             }
         });
@@ -463,10 +483,8 @@
         }
 
         let cargoByDate = {};
-
-        // Group the trucks by date and non-empty cargo type
         data.forEach(truck => {
-            if (truck.type_cargo) { // Exclude empty cargo types
+            if (truck.type_cargo) {
                 let date = new Date(truck.date).toLocaleDateString();
                 let cargoType = truck.type_cargo;
 
@@ -479,9 +497,7 @@
         });
 
         let dates = Object.keys(cargoByDate);
-        let cargoTypes = Array.from(
-            new Set(data.map(truck => truck.type_cargo).filter(type => type))
-        );
+        let cargoTypes = Array.from(new Set(data.map(truck => truck.type_cargo).filter(type => type)));
 
         let datasets = cargoTypes.map(type => {
             let dataPoints = dates.map(date => cargoByDate[date][type] || 0);
