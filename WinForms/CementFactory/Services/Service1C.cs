@@ -14,7 +14,6 @@ namespace CementFactory.Services
 {
     public class Service1C
     {
-        private readonly string _baseUrl = "http://10.10.0.11:80/solt/hs/solt/";
         private readonly string _username = "Admin";
         private readonly string _password = "123";
 
@@ -43,10 +42,12 @@ namespace CementFactory.Services
                 },
             };
 #endif
+            var ip = ConfigurationManager.AppSettings["1CServer"];
+            var baseUrl = $"http://{ip}/solt/hs/solt/";
             
             using (var client = CreateHttpClient())
             {
-                var response = await client.GetAsync(_baseUrl + "goods");
+                var response = await client.GetAsync(baseUrl + "goods");
                 response.EnsureSuccessStatusCode();
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var products = JsonConvert.DeserializeObject<ApiResponse>(responseBody);
@@ -71,10 +72,11 @@ namespace CementFactory.Services
                 },
             };
 #endif
-            
+            var ip = ConfigurationManager.AppSettings["1CServer"];
+            var baseUrl = $"http://{ip}/solt/hs/solt/";
             using (var client = CreateHttpClient())
             {
-                var response = await client.GetAsync(_baseUrl + "customerWarehouse");
+                var response = await client.GetAsync(baseUrl + "customerWarehouse");
                 response.EnsureSuccessStatusCode();
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var products = JsonConvert.DeserializeObject<ApiResponse>(responseBody);
@@ -93,11 +95,14 @@ namespace CementFactory.Services
 
             try
             {
+                var ip = ConfigurationManager.AppSettings["1CServer"];
+                var baseUrl = $"http://{ip}/solt/hs/solt/";
+                
                 using (var client = CreateHttpClient())
                 {
                     var jsonContent = JsonConvert.SerializeObject(saleRequest);
                     var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                    var response = await client.PostAsync(_baseUrl + "goodsMoving", content);
+                    var response = await client.PostAsync(baseUrl + "goodsMoving", content);
                     response.EnsureSuccessStatusCode();
                     var responseBody = await response.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<dynamic>(responseBody);
@@ -106,7 +111,7 @@ namespace CementFactory.Services
             }
             catch (Exception ex)
             {
-                Log.Error(ex.Message, ex);
+                Log.Error(ex.Message + " 1C service goodsMoving", ex);
                 return false;
             }
         }
