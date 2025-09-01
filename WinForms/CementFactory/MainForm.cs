@@ -278,23 +278,23 @@ namespace CementFactory
             var selectedPlateNumber = (Truck)currentNumbersBox.SelectedItem;
             var truck = _truckService.GetTruckById(selectedPlateNumber.Id);
             
-            var result1C = await _service1C.GoodsMoving(new SaleRequest
-            {
-                Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                Goods = new List<SaleItem>
-                {
-                    new SaleItem
-                    {
-                        Count = 1,
-                        Guid = selectedGood.Guid,
-                        Weight = double.Parse(cubMetr)
-                    }
-                },
-                WarehouseRecipient = selectedClient.Guid,
-                CarNumber = truck.plate_number
-            });
-            
-            truck.c1_status = result1C ? Constants.Constants.OneCErrorStatus : Constants.Constants.OneCOkStatus;
+            // var result1C = await _service1C.GoodsMoving(new SaleRequest
+            // {
+            //     Date = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+            //     Goods = new List<SaleItem>
+            //     {
+            //         new SaleItem
+            //         {
+            //             Count = 1,
+            //             Guid = selectedGood.Guid,
+            //             Weight = double.Parse(cubMetr)
+            //         }
+            //     },
+            //     WarehouseRecipient = selectedClient.Guid,
+            //     CarNumber = truck.plate_number
+            // });
+
+            truck.c1_status = Constants.Constants.OneCErrorStatus;// result1C ? Constants.Constants.OneCErrorStatus : Constants.Constants.OneCOkStatus;
             truck.type_cargo = selectedGood.Name;
             truck.cub_metr = cubMetr;
 

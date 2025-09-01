@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows.Forms;
 using CementFactory.Models;
+using NReco.PdfGenerator;
 
 namespace CementFactory.Services
 {
@@ -35,6 +36,7 @@ namespace CementFactory.Services
             var htmlTemplate = @"
             <html>
                 <head>
+                    <meta charset=""UTF-8"">
                     <style>
                         @page {
                             size: A4; /* Ensure it fits A4 */
@@ -339,8 +341,33 @@ namespace CementFactory.Services
 
         private void WebBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            _webBrowser.Print();
-            SaveCounterValue();
+            using (var saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Title = "Сохранить накладную";
+                saveFileDialog.Filter = "PDF файл (*.pdf)|*.pdf";
+                saveFileDialog.FileName = $"Invoice_{counterValue}.pdf";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    var htmlContent = _webBrowser.DocumentText;
+
+                    var htmlToPdf = new HtmlToPdfConverter
+                    {
+                        Size = PageSize.A4,
+                        Orientation = PageOrientation.Portrait
+                    };
+
+                    htmlToPdf.GeneratePdf(htmlContent, null, saveFileDialog.FileName);
+
+                    SaveCounterValue();
+                    MessageBox.Show(
+                        $"Накладная сохранена:\n{saveFileDialog.FileName}", 
+                        "Успех", 
+                        MessageBoxButtons.OK, 
+                        MessageBoxIcon.Information
+                    );
+                }
+            }
         }
         
         private void LoadCounterValue()
